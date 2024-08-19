@@ -25,7 +25,7 @@ app.use(bodyParser.json());
 app.use('/', router);
 app.get("/",(req,res) => {
   
-  res.json({mesage:"Bienvenido Estudiantes de UMG SALAMA"});
+  res.json({mesage:"Bienvenido Estudiantes de UMG SALAMA BAJA VERAPAZ"});
 })
 
 // Create a Server
