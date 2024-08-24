@@ -1,238 +1,156 @@
 
 
 const db = require('../config/db.config.js');
-const Customer = db.Customer;
+const Libros = db.Libros;
 
 exports.create = (req, res) => {
-    let customer = {};
+    let libro = {};
 
     try{
-        // Building Customer object from upoading request's body
-        customer.firstname = req.body.firstname;
-        customer.lastname = req.body.lastname;
-        customer.address = req.body.address;
-        customer.age = req.body.age;
-    
-        // Save to MySQL database
-        Customer.create(customer).then(result => {    
-            // send uploading message to client
+        // Construir el objeto Libro desde el cuerpo de la solicitud
+        libro.codigolibro = req.body.codigolibro;
+        libro.nombre = req.body.nombre;
+        libro.editorial = req.body.editorial;
+        libro.autor = req.body.autor;
+        libro.genero = req.body.genero;
+        libro.paisautor = req.body.paisautor;
+        libro.numeropaginas = req.body.numeropaginas;
+        libro.aniopublicacion = req.body.aniopublicacion;
+        libro.anioedicion = req.body.anioedicion;
+        libro.precio = req.body.precio;
+
+        // Guardar en la base de datos MySQL
+        Libros.create(libro).then(result => {    
+            // Enviar mensaje de carga al cliente
             res.status(200).json({
-                message: "Upload Successfully a Customer with id = " + result.id,
-                customer: result,
+                message: "Libro creado con éxito con id = " + result.codigolibro,
+                libro: result,
             });
         });
-    }catch(error){
+    } catch (error) {
         res.status(500).json({
-            message: "Fail!",
+            message: "¡Fallo!",
             error: error.message
         });
     }
 }
 
-exports.retrieveAllCustomers = (req, res) => {
-    // find all Customer information from 
-    Customer.findAll()
-        .then(customerInfos => {
+exports.retrieveAllBooks = (req, res) => {
+    // Encontrar toda la información de los libros
+    Libros.findAll()
+        .then(libroInfos => {
             res.status(200).json({
-                message: "Get all Customers' Infos Successfully!",
-                customers: customerInfos
+                message: "¡Se obtuvieron con éxito todos los libros!",
+                libros: libroInfos
             });
         })
-        . catch(error => {
-          // log on console
-          console.log(error);
+        .catch(error => {
+            // Log en consola
+            console.log(error);
 
-          res.status(500).json({
-              message: "Error!",
-              error: error
-          });
-        });
-}
-
-exports.getCustomerById = (req, res) => {
-  // find all Customer information from 
-  let customerId = req.params.id;
-  Customer.findByPk(customerId)
-      .then(customer => {
-          res.status(200).json({
-              message: " Successfully Get a Customer with id = " + customerId,
-              customers: customer
-          });
-      })
-      . catch(error => {
-        // log on console
-        console.log(error);
-
-        res.status(500).json({
-            message: "Error!",
-            error: error
-        });
-      });
-}
-
-
-exports.filteringByAge = (req, res) => {
-  let age = req.query.age;
-
-    Customer.findAll({
-                      attributes: ['id', 'firstname', 'lastname', 'age', 'address', 'copyrightby'],
-                      where: {age: age}
-                    })
-          .then(results => {
-            res.status(200).json({
-                message: "Get all Customers with age = " + age,
-                customers: results,
-            });
-          })
-          . catch(error => {
-              console.log(error);
-              res.status(500).json({
-                message: "Error!",
+            res.status(500).json({
+                message: "¡Error!",
                 error: error
-              });
             });
-}
- 
-exports.pagination = (req, res) => {
-  try{
-    let page = parseInt(req.query.page);
-    let limit = parseInt(req.query.limit);
-  
-    const offset = page ? page * limit : 0;
-  
-    Customer.findAndCountAll({ limit: limit, offset:offset })
-      .then(data => {
-        const totalPages = Math.ceil(data.count / limit);
-        const response = {
-          message: "Paginating is completed! Query parameters: page = " + page + ", limit = " + limit,
-          data: {
-              "copyrightby": "UMG ANTIGUA",
-              "totalItems": data.count,
-              "totalPages": totalPages,
-              "limit": limit,
-              "currentPageNumber": page + 1,
-              "currentPageSize": data.rows.length,
-              "customers": data.rows
-          }
-        };
-        res.send(response);
-      });  
-  }catch(error) {
-    res.status(500).send({
-      message: "Error -> Can NOT complete a paging request!",
-      error: error.message,
-    });
-  }    
+        });
 }
 
-exports.pagingfilteringsorting = (req, res) => {
-  try{
-    let page = parseInt(req.query.page);
-    let limit = parseInt(req.query.limit);
-    let age = parseInt(req.query.age);
-  
-    const offset = page ? page * limit : 0;
+exports.getBookById = (req, res) => {
+    // Obtener la información del libro por ID
+    let libroId = req.params.codigolibro;
+    Libros.findByPk(libroId)
+        .then(libro => {
+            if (libro) {
+                res.status(200).json({
+                    message: "Se obtuvo con éxito un libro con id = " + libroId,
+                    libro: libro
+                });
+            } else {
+                res.status(404).json({
+                    message: "No se encontró un libro con id = " + libroId,
+                    error: "404"
+                });
+            }
+        })
+        .catch(error => {
+            // Log en consola
+            console.log(error);
 
-    console.log("offset = " + offset);
-  
-    Customer.findAndCountAll({
-                                attributes: ['id', 'firstname', 'lastname', 'age', 'address'],
-                                where: {age: age}, 
-                                order: [
-                                  ['firstname', 'ASC'],
-                                  ['lastname', 'DESC']
-                                ],
-                                limit: limit, 
-                                offset:offset 
-                              })
-      .then(data => {
-        const totalPages = Math.ceil(data.count / limit);
-        const response = {
-          message: "Pagination Filtering Sorting request is completed! Query parameters: page = " + page + ", limit = " + limit + ", age = " + age,
-          data: {
-              "copyrightby": "UmgAntigua",
-              "totalItems": data.count,
-              "totalPages": totalPages,
-              "limit": limit,
-              "age-filtering": age,
-              "currentPageNumber": page + 1,
-              "currentPageSize": data.rows.length,
-              "customers": data.rows
-          }
-        };
-        res.send(response);
-      });  
-  }catch(error) {
-    res.status(500).send({
-      message: "Error -> Can NOT complete a paging request!",
-      error: error.message,
-    });
-  }      
+            res.status(500).json({
+                message: "¡Error!",
+                error: error
+            });
+        });
 }
 
 exports.updateById = async (req, res) => {
-    try{
-        let customerId = req.params.id;
-        let customer = await Customer.findByPk(customerId);
+    try {
+        let libroId = req.params.codigolibro;
+        let libro = await Libros.findByPk(libroId);
     
-        if(!customer){
-            // return a response to client
+        if (!libro) {
+            // Devolver respuesta al cliente
             res.status(404).json({
-                message: "Not Found for updating a customer with id = " + customerId,
-                customer: "",
+                message: "No se encontró un libro para actualizar con id = " + libroId,
+                libro: "",
                 error: "404"
             });
-        } else {    
-            // update new change to database
+        } else {
+            // Actualizar los cambios en la base de datos
             let updatedObject = {
-                firstname: req.body.firstname,
-                lastname: req.body.lastname,
-                address: req.body.address,
-                age: req.body.age
+                nombre: req.body.nombre,
+                editorial: req.body.editorial,
+                autor: req.body.autor,
+                genero: req.body.genero,
+                paisautor: req.body.paisautor,
+                numeropaginas: req.body.numeropaginas,
+                aniopublicacion: req.body.aniopublicacion,
+                anioedicion: req.body.anioedicion,
+                precio: req.body.precio
             }
-            let result = await Customer.update(updatedObject, {returning: true, where: {id: customerId}});
+            let result = await Libros.update(updatedObject, {returning: true, where: {codigolibro: libroId}});
             
-            // return the response to client
-            if(!result) {
+            // Devolver respuesta al cliente
+            if (result[0] === 0) {
                 res.status(500).json({
-                    message: "Error -> Can not update a customer with id = " + req.params.id,
-                    error: "Can NOT Updated",
+                    message: "Error -> No se pudo actualizar el libro con id = " + libroId,
+                    error: "No se pudo actualizar",
+                });
+            } else {
+                res.status(200).json({
+                    message: "Se actualizó con éxito un libro con id = " + libroId,
+                    libro: updatedObject,
                 });
             }
-
-            res.status(200).json({
-                message: "Update successfully a Customer with id = " + customerId,
-                customer: updatedObject,
-            });
         }
-    } catch(error){
+    } catch (error) {
         res.status(500).json({
-            message: "Error -> Can not update a customer with id = " + req.params.id,
+            message: "Error -> No se pudo actualizar el libro con id = " + req.params.codigolibro,
             error: error.message
         });
     }
 }
 
 exports.deleteById = async (req, res) => {
-    try{
-        let customerId = req.params.id;
-        let customer = await Customer.findByPk(customerId);
+    try {
+        let libroId = req.params.codigolibro;
+        let libro = await Libros.findByPk(libroId);
 
-        if(!customer){
+        if (!libro) {
             res.status(404).json({
-                message: "Does Not exist a Customer with id = " + customerId,
+                message: "No existe un libro con id = " + libroId,
                 error: "404",
             });
         } else {
-            await customer.destroy();
+            await libro.destroy();
             res.status(200).json({
-                message: "Delete Successfully a Customer with id = " + customerId,
-                customer: customer,
+                message: "Se eliminó con éxito un libro con id = " + libroId,
+                libro: libro,
             });
         }
-    } catch(error) {
+    } catch (error) {
         res.status(500).json({
-            message: "Error -> Can NOT delete a customer with id = " + req.params.id,
+            message: "Error -> No se pudo eliminar el libro con id = " + req.params.codigolibro,
             error: error.message,
         });
     }
